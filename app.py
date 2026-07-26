@@ -6,11 +6,17 @@ from googleapiclient.discovery import build
 from datetime import datetime, timezone, timedelta
 import re
 
+# Intento de importación de OpenAI con manejo de errores
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+
 # ==========================================
 # CONFIGURACIÓN Y ESTILOS UI ULTRA-MODERNOS
 # ==========================================
 st.set_page_config(
-    page_title="ViewPulse | Los 10 Nichos Potentes de YouTube",
+    page_title="ViewPulse | Los 10 Nichos Potentes + Creador de Guiones",
     page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -221,7 +227,6 @@ def format_num(num):
     return str(num)
 
 def fetch_top_10_niches_trending(youtube):
-    """Busca vídeos virales recientes de los 10 nichos potentes."""
     niches_list = [
         {"nombre": "Fútbol + Polémica", "query": "futbol polemica arbitraje fiascos", "categoria": "Deportes"},
         {"nombre": "¿Qué pasaría si...?", "query": "que pasaria si ciencia humanidad", "categoria": "Curiosidades"},
@@ -293,7 +298,6 @@ def get_channel_complete_info(youtube, query):
         return None, None
 
 def search_channels_global(youtube, query_keyword, lang_code="", max_results=12):
-    """Busca los mejores canales en YouTube de forma abierta y directa."""
     try:
         search_kwargs = {
             "q": query_keyword,
@@ -344,7 +348,7 @@ with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 10px 0;">
         <h2 style="color: #FF0000; margin:0; font-weight: 800;">🚀 ViewPulse</h2>
-        <p style="font-size: 0.8rem; color: #888;">Los 10 Nichos Potentes de YouTube</p>
+        <p style="font-size: 0.8rem; color: #888;">Los 10 Nichos Potentes + Creador IA</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -359,12 +363,13 @@ with st.sidebar:
             "🔗 Canales Relacionados por Nicho",
             "🔍 Explorador por Nicho & Micronicho",
             "📊 Auditoría Visual de Canal",
+            "✍️ Creador Nativo de Guiones",
             "📘 ¿Cómo sacar tu API Key?"
         ]
     )
     
     st.markdown("---")
-    st.caption("🚀 powered by **YouTube Data API v3**")
+    st.caption("🚀 powered by **YouTube Data API & OpenAI**")
 
 # ==========================================
 # SECCIÓN: TUTORIAL API KEY
@@ -395,16 +400,96 @@ if menu == "📘 ¿Cómo sacar tu API Key?":
     """, unsafe_allow_html=True)
     st.stop()
 
-# Verificación de API Key
+# ==========================================
+# SECCIÓN: CREADOR NATIVO DE GUIONES CON IA
+# ==========================================
+elif menu == "✍️ Creador Nativo de Guiones":
+    st.title("✍️ Creador Nativo de Guiones Virales con IA")
+    st.markdown("Genera guiones completos estructurados con **ganchos de alta retención** optimizados para los 10 nichos potentes.")
+    
+    col_api, col_info = st.columns([2, 1])
+    with col_api:
+        openai_key = st.text_input("🔑 Tu API Key de OpenAI (sk-...):", type="password", placeholder="sk-proj-...")
+    with col_info:
+        st.caption("💡 ¿Dónde la consigues? En [platform.openai.com](https://platform.openai.com/api-keys) registrándote gratis.")
+
+    st.markdown("---")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        sel_nicho_guion = st.selectbox("📌 Selecciona el Nicho del Vídeo:", list(DICCIONARIO_10_NICHOS.keys()))
+        sel_micronicho_guion = st.selectbox("🎯 Micronicho / Enfoque:", DICCIONARIO_10_NICHOS[sel_nicho_guion])
+    with col2:
+        duracion_guion = st.select_slider(
+            "⏱️ Duración Estimada:",
+            options=["Short (60 segundos)", "4-6 Minutos", "8-10 Minutos (Monetizable)", "12+ Minutos (Documental)"]
+        )
+        estilo_tono = st.selectbox(
+            "🎭 Tono de Narración:",
+            ["Intenso y Conspirativo", "Dramático y Emocional", "Rápido y Dinámico", "Educativo y Analítico", "Oscuro y Misterioso"]
+        )
+    
+    idea_video = st.text_area("💡 Tema, Idea o Título del Vídeo:", placeholder="Ejemplo: La estafa de la transferencia más cara en la historia del fútbol")
+    
+    if st.button("🪄 Generar Guion Viral"):
+        if not openai_key:
+            st.error("⚠️ Necesitas ingresar tu API Key de OpenAI arriba para generar el guion.")
+        elif not idea_video:
+            st.warning("⚠️ Ingresa un tema o idea para el vídeo.")
+        elif OpenAI is None:
+            st.error("⚠️ Falta instalar la librería 'openai' en tu servidor. Revisa tu archivo requirements.txt.")
+        else:
+            try:
+                client = OpenAI(api_key=openai_key)
+                
+                with st.spinner("🧠 Redactando estructura, ganchos de retención y guion completo..."):
+                    system_prompt = f"""
+                    Eres un guionista senior de YouTube especializado en crear vídeos virales de alta retención para el nicho '{sel_nicho_guion}' (Subnicho: '{sel_micronicho_guion}').
+                    Escribes con el tono: {estilo_tono}.
+                    
+                    Instrucciones estrictas de estructura del guion:
+                    1. GANCHO (0-10 segundos): Frase extremadamente impactante para enganchar de inmediato. Sin saludos aburridos.
+                    2. INTRODUCCIÓN Y PROMESA (10-30 segundos): Plantea el conflicto principal y qué descubrirán al final.
+                    3. DESARROLLO / CUERPO: Dividido en bloques con giros de guion, datos impactantes e indicaciones visuales entre corchetes [ejemplo: [Mostrar miniatura rápida], [Música de tensión aumenta]].
+                    4. LLAMADO A LA ACCIÓN (CTA): Una frase orgánica al final para pedir suscripción o comentarios sin cortar el ritmo.
+                    """
+                    
+                    user_prompt = f"Escribe el guion completo para un vídeo formato '{duracion_guion}' sobre la siguiente idea: '{idea_video}'."
+                    
+                    response = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ]
+                    )
+                    
+                    resultado = response.choices[0].message.content
+                    st.markdown("### 📜 Tu Guion Generado:")
+                    st.markdown(f'<div class="saas-card">{resultado}</div>', unsafe_allow_html=True)
+                    
+                    st.download_button(
+                        label="📥 Descargar Guion (.txt)",
+                        data=resultado,
+                        file_name=f"guion_{sel_nicho_guion.lower().replace(' ', '_')}.txt",
+                        mime="text/plain"
+                    )
+            except Exception as e:
+                st.error(f"Error al conectar con la API de OpenAI: {e}")
+    st.stop()
+
+# ==========================================
+# VERIFICACIÓN DE YOUTUBE API KEY PARA OTRAS SECCIONES
+# ==========================================
 if not api_key:
-    st.warning("👈 Por favor, ingresa tu **API Key de YouTube** en el menú de la izquierda para comenzar.")
+    st.warning("👈 Por favor, ingresa tu **API Key de YouTube** en el menú de la izquierda para explorar datos de canales.")
     st.info("💡 ¿No tienes una clave aún? Haz clic en la opción **'📘 ¿Cómo sacar tu API Key?'** en el menú lateral.")
     st.stop()
 
 try:
     youtube = build("youtube", "v3", developerKey=api_key)
 except Exception:
-    st.error("Error al autenticar la API Key. Verifica que esté correctamente copiada.")
+    st.error("Error al autenticar la API Key de YouTube. Verifica que esté correctamente copiada.")
     st.stop()
 
 # ==========================================
