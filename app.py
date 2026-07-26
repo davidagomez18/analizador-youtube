@@ -10,8 +10,8 @@ import re
 # CONFIGURACIÓN Y ESTILOS UI ULTRA-MODERNOS
 # ==========================================
 st.set_page_config(
-    page_title="ViewPulse SaaS | Intelligence & Discovery",
-    page_icon="⚡",
+    page_title="ViewPulse | Los 10 Nichos Potentes de YouTube",
+    page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -106,7 +106,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
     
-    /* Badges de Tendencia y Categoría */
+    /* Badges */
     .badge-trend {
         background: linear-gradient(135deg, #FF0000 0%, #B30000 100%);
         color: white;
@@ -126,7 +126,6 @@ st.markdown("""
         font-weight: 600;
     }
     
-    /* Pasos del Tutorial */
     .step-box {
         background: rgba(255, 255, 255, 0.03);
         border-left: 4px solid #FF0000;
@@ -138,43 +137,68 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# DICCIONARIO DE NICHOS Y MICRONICHOS
+# LOS 10 NICHOS Y MICRONICHOS POTENTES
 # ==========================================
-DICCIONARIO_NICHOS = {
-    "Tecnología e Inteligencia Artificial": [
-        "Inteligencia Artificial y Tools",
-        "Ciberseguridad y Hacking Ético",
-        "Smartphones y Reviews de Gadgets",
-        "Programación y Desarrollo Software",
-        "Tecnología Futurista y Ciencia"
+DICCIONARIO_10_NICHOS = {
+    "⚽ Fútbol + Polémica": [
+        "Fiascos y Arbitrajes Polémicos",
+        "Transferencias Millonarias y Estafas",
+        "Peleas y Conflictos de Futbolistas",
+        "Decisiones Polémicas del VAR"
     ],
-    "Finanzas, Negocios y Cripto": [
-        "Inversiones y Bolsa de Valores",
-        "Criptomonedas y Web3",
-        "Emprendimiento y E-commerce",
-        "Finanzas Personales y Ahorro",
-        "Bienes Raíces / Real Estate"
+    "❓ ¿Qué pasaría si...?": [
+        "Escenarios Hipotéticos de la Humanidad",
+        "Ciencia y Eventos Apocalípticos",
+        "Experimentos Mentales y Futuro",
+        "Teorías de Historia Alternativa"
     ],
-    "Gaming y Esports": [
-        "Minecraft y Sandbox",
-        "Shooters (Valorant, CoD, Fortnite)",
-        "Guias y Lore de RPGs",
-        "Noticias de Gaming y Consolas",
-        "Esports y Competición"
+    "✝️ Religión y Profecías": [
+        "Misterios y Profecías Bíblicas",
+        "Milagros Modernos y Apariciones",
+        "El Apocalipsis y Fin de los Tiempos",
+        "Secretos de la Arqueología Sagrada"
     ],
-    "Desarrollo Personal y Estilo de Vida": [
-        "Productividad y Hábitos",
-        "Fitness, Calistenia y Nutrición",
-        "Viajes y Vlogs de Estilo de Vida",
-        "Minimalismo y Organización",
-        "Biohacking y Salud Mental"
+    "🕵️‍♂️ Casos Criminales (True Crime)": [
+        "Interrogatorios y Grabaciones Reales",
+        "Desapariciones Misteriosas Sin Resolver",
+        "Perfiles de Asesinos y Criminales",
+        "Archivos Extraños y Casos Perturbadores"
     ],
-    "Entretenimiento y Cultura Pop": [
-        "Cine, Series y Análisis de Guion",
-        "Documentales y Casos Misteriosos",
-        "Curiosidades y Datos Fascinantes",
-        "Humor y Comedia",
-        "Música, Beats y Producción"
+    "🌐 Geopolítico + Morbo": [
+        "Guerras Secretas y Espionaje",
+        "Conflictos Internacionales y Tensiones",
+        "Secretos Gubernamentales y Poder",
+        "Análisis de Geopolítica Global"
+    ],
+    "🛸 Misterios y Conspiraciones": [
+        "Área 51 y Fenómenos Extraterrestres",
+        "Civilizaciones Perdidas y Enigmas",
+        "Experimentos Secretos e Historia Oculta",
+        "Teorías de Conspiración Populares"
+    ],
+    "🎵 Canciones con IA en Loop": [
+        "Loops Virales de Música 10 Horas",
+        "Covers Virales de Canciones con IA",
+        "Musica Relax y Beats para Estudiar",
+        "Parodias Musicales y Personajes"
+    ],
+    "💎 Lujos y Millonarios": [
+        "Vida Oculta de los Multimillonarios",
+        "Supercoches y Mansiones Incredibles",
+        "Fortunas y Estilos de Vida Extremos",
+        "Negocios Gigantes y Cómo Hicieron Dinero"
+    ],
+    "👽 Historias Oscuras de Reddit": [
+        "Confesiones Anónimas Aterradoras",
+        "Historias Perturbadoras de Reddit",
+        "Misterios Reales Confesados en Internet",
+        "Relatos de Terror y Anécdotas Extrañas"
+    ],
+    "🎬 Cine y Famosos": [
+        "Escándalos y Vida Oculta de Famosos",
+        "Secretos Oscuros de Hollywood",
+        "Caídas y Cancelaciones de Celebridades",
+        "Errores e Historias Inéditas de Películas"
     ]
 }
 
@@ -187,7 +211,7 @@ DICCIONARIO_IDIOMAS = {
 }
 
 # ==========================================
-# FUNCIONES AUXILIARES
+# FUNCIONES AUXILIARES DE YOUTUBE DATA API
 # ==========================================
 def format_num(num):
     if num is None or num == 0: return "0"
@@ -196,20 +220,21 @@ def format_num(num):
     if num >= 1_000: return f"{num/1_000:.1f}K"
     return str(num)
 
-def fetch_top_niches_last_month(youtube):
-    niches = [
-        {"nombre": "Inteligencia Artificial & Herramientas", "query": "IA herramientas tutorial", "categoria": "Tecnología"},
-        {"nombre": "Finanzas & Cripto", "query": "inversiones finanzas crypto", "categoria": "Negocios"},
-        {"nombre": "Gaming & Esports", "query": "gaming gameplay español", "categoria": "Entretenimiento"},
-        {"nombre": "Productividad & Estilo de Vida", "query": "hábitos rutina productividad", "categoria": "Desarrollo Personal"},
-        {"nombre": "Documentales & Storytelling", "query": "documental misterio historia", "categoria": "Cultura"}
+def fetch_top_10_niches_trending(youtube):
+    """Busca vídeos virales recientes de los 10 nichos potentes."""
+    niches_list = [
+        {"nombre": "Fútbol + Polémica", "query": "futbol polemica arbitraje fiascos", "categoria": "Deportes"},
+        {"nombre": "¿Qué pasaría si...?", "query": "que pasaria si ciencia humanidad", "categoria": "Curiosidades"},
+        {"nombre": "Casos Criminales (True Crime)", "query": "casos criminales true crime misterio", "categoria": "True Crime"},
+        {"nombre": "Historias Oscuras de Reddit", "query": "historias reddit terror confesiones", "categoria": "Relatos"},
+        {"nombre": "Lujos y Millonarios", "query": "lujos millonarios fortuna mansiones", "categoria": "Estilo de Vida"}
     ]
     
     now = datetime.now(timezone.utc)
     one_month_ago = (now - timedelta(days=30)).isoformat()
     
     results = []
-    for niche in niches:
+    for niche in niches_list:
         try:
             res = youtube.search().list(
                 q=niche["query"],
@@ -267,8 +292,8 @@ def get_channel_complete_info(youtube, query):
     except Exception:
         return None, None
 
-def search_channels_by_keyword(youtube, query_keyword, lang_code="", max_results=12):
-    """Busca y extrae los mejores canales basados en una palabra clave e idioma."""
+def search_channels_global(youtube, query_keyword, lang_code="", max_results=12):
+    """Busca los mejores canales en YouTube de forma abierta y directa."""
     try:
         search_kwargs = {
             "q": query_keyword,
@@ -286,7 +311,6 @@ def search_channels_by_keyword(youtube, query_keyword, lang_code="", max_results
         if not channel_ids:
             return []
 
-        # Obtener estadísticas detalladas
         c_res = youtube.channels().list(
             part="snippet,statistics",
             id=",".join(channel_ids)
@@ -307,11 +331,10 @@ def search_channels_by_keyword(youtube, query_keyword, lang_code="", max_results
                 "custom_url": snip.get("customUrl", "")
             })
             
-        # Ordenar por vistas totales
         channels_data.sort(key=lambda x: x["vistas"], reverse=True)
         return channels_data
     except Exception as e:
-        st.error(f"Error al buscar canales: {e}")
+        st.error(f"Error en la búsqueda de canales: {e}")
         return []
 
 # ==========================================
@@ -320,8 +343,8 @@ def search_channels_by_keyword(youtube, query_keyword, lang_code="", max_results
 with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 10px 0;">
-        <h2 style="color: #FF0000; margin:0; font-weight: 800;">⚡ ViewPulse</h2>
-        <p style="font-size: 0.8rem; color: #888;">YouTube Intelligence Platform</p>
+        <h2 style="color: #FF0000; margin:0; font-weight: 800;">🚀 ViewPulse</h2>
+        <p style="font-size: 0.8rem; color: #888;">Los 10 Nichos Potentes de YouTube</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -332,9 +355,9 @@ with st.sidebar:
     menu = st.radio(
         "Navegación:",
         [
-            "🔥 Top Nichos del Último Mes",
+            "🔥 Tendencias en los 10 Nichos",
             "🔗 Canales Relacionados por Nicho",
-            "🔍 Explorador de Nichos y Micronichos",
+            "🔍 Explorador por Nicho & Micronicho",
             "📊 Auditoría Visual de Canal",
             "📘 ¿Cómo sacar tu API Key?"
         ]
@@ -385,14 +408,14 @@ except Exception:
     st.stop()
 
 # ==========================================
-# SECCIÓN 1: TOP NICHOS DEL ÚLTIMO MES
+# SECCIÓN 1: TENDENCIAS EN LOS 10 NICHOS
 # ==========================================
-if menu == "🔥 Top Nichos del Último Mes":
-    st.title("🔥 Nichos y Tendencias con Mayor Crecimiento (Últimos 30 Días)")
-    st.markdown("Análisis del mercado en YouTube para identificar temas de alta tracción y contenidos virales recientes.")
+if menu == "🔥 Tendencias en los 10 Nichos":
+    st.title("🔥 Vídeos Virales Recientes en los Nichos Más Potentes")
+    st.markdown("Análisis automático del mercado de YouTube en los formatos de mayor crecimiento e impacto del último mes.")
     
-    with st.spinner("🔍 Cargando tendencias globales del último mes..."):
-        top_data = fetch_top_niches_last_month(youtube)
+    with st.spinner("🔍 Cargando vídeos más vistos del mercado..."):
+        top_data = fetch_top_10_niches_trending(youtube)
         
     for item in top_data:
         st.markdown(f"""
@@ -403,30 +426,34 @@ if menu == "🔥 Top Nichos del Último Mes":
             </div>
         """, unsafe_allow_html=True)
         
-        cols = st.columns(len(item["videos"]))
-        for idx, vid in enumerate(item["videos"]):
-            with cols[idx]:
-                st.markdown(f"""
-                <div class="video-card">
-                    <img src="{vid['thumb']}" class="video-thumb" />
-                    <div style="padding: 12px;">
-                        <p style="font-weight:700; font-size:0.85rem; margin-bottom:5px; height: 40px; overflow: hidden; color: #FFF;">{vid['titulo']}</p>
-                        <p style="font-size:0.75rem; color:#888; margin-bottom:8px;">📺 <strong>{vid['canal']}</strong></p>
-                        <div style="display:flex; gap:8px;">
-                            <span class="badge-metric">👁️ {format_num(vid['vistas'])}</span>
-                            <span class="badge-metric">👍 {format_num(vid['likes'])}</span>
+        if item["videos"]:
+            cols = st.columns(len(item["videos"]))
+            for idx, vid in enumerate(item["videos"]):
+                with cols[idx]:
+                    st.markdown(f"""
+                    <div class="video-card">
+                        <img src="{vid['thumb']}" class="video-thumb" />
+                        <div style="padding: 12px;">
+                            <p style="font-weight:700; font-size:0.85rem; margin-bottom:5px; height: 40px; overflow: hidden; color: #FFF;">{vid['titulo']}</p>
+                            <p style="font-size:0.75rem; color:#888; margin-bottom:8px;">📺 <strong>{vid['canal']}</strong></p>
+                            <div style="display:flex; gap:8px;">
+                                <span class="badge-metric">👁️ {format_num(vid['vistas'])}</span>
+                                <span class="badge-metric">👍 {format_num(vid['likes'])}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+        else:
+            st.info("No se encontraron vídeos en las últimas semanas para esta categoría.")
+            
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
-# SECCIÓN 2: CANALES RELACIONADOS POR NICHO (NUEVO)
+# SECCIÓN 2: CANALES RELACIONADOS POR NICHO
 # ==========================================
 elif menu == "🔗 Canales Relacionados por Nicho":
-    st.title("🔗 Buscador de Canales Relacionados por Nicho")
-    st.markdown("Ingresa un canal de referencia y descubre los **mejores canales competidores y afines** de su mismo ecosistema.")
+    st.title("🔗 Buscador de Canales Competidores por Nicho")
+    st.markdown("Ingresa un canal de referencia y descubre los **mejores canales competidores** de su misma categoría.")
     
     col_input, col_lang = st.columns([3, 1])
     with col_input:
@@ -435,9 +462,8 @@ elif menu == "🔗 Canales Relacionados por Nicho":
         selected_lang_label = st.selectbox("🌐 Filtrar Idioma:", list(DICCIONARIO_IDIOMAS.keys()))
         selected_lang_code = DICCIONARIO_IDIOMAS[selected_lang_label]
         
-    if st.button("🚀 Buscar Canales Relacionados"):
-        with st.spinner(f"Analizando el nicho de {target_channel}..."):
-            # 1. Obtener información del canal base
+    if st.button("🚀 Buscar Canales Competidores"):
+        with st.spinner(f"Analizando competidores para {target_channel}..."):
             ch_item, _ = get_channel_complete_info(youtube, target_channel)
             if not ch_item:
                 st.error("No se pudo encontrar el canal de referencia.")
@@ -445,19 +471,16 @@ elif menu == "🔗 Canales Relacionados por Nicho":
                 base_title = ch_item["snippet"]["title"]
                 base_desc = ch_item["snippet"].get("description", "")
                 
-                # Extraer palabras clave del nombre/descripción para buscar el nicho
-                search_query = f"{base_title} {base_desc[:100]}"
-                related_channels = search_channels_by_keyword(youtube, search_query, lang_code=selected_lang_code, max_results=12)
+                search_query = f"{base_title} {base_desc[:80]}"
+                related_channels = search_channels_global(youtube, search_query, lang_code=selected_lang_code, max_results=12)
                 
-                # Filtrar el propio canal de referencia de los resultados
                 related_channels = [c for c in related_channels if c["id"] != ch_item["id"]]
                 
-                st.markdown(f"### 🎯 Mejores Canales Relacionados con **{base_title}**")
+                st.markdown(f"### 🎯 Mejores Canales Competidores de **{base_title}**")
                 
                 if not related_channels:
-                    st.warning("No se encontraron canales relacionados con los filtros seleccionados.")
+                    st.warning("No se encontraron canales relacionados con esos filtros.")
                 else:
-                    # Renderizar en Grid de 3 columnas
                     for i in range(0, len(related_channels), 3):
                         cols = st.columns(3)
                         for j in range(3):
@@ -480,32 +503,31 @@ elif menu == "🔗 Canales Relacionados por Nicho":
                                     """, unsafe_allow_html=True)
 
 # ==========================================
-# SECCIÓN 3: EXPLORADOR DE NICHOS Y MICRONICHOS (NUEVO)
+# SECCIÓN 3: EXPLORADOR DE NICHOS Y MICRONICHOS
 # ==========================================
-elif menu == "🔍 Explorador de Nichos y Micronichos":
-    st.title("🔍 Explorador Inteligente de Canales por Nicho & Micronicho")
-    st.markdown("Selecciona una categoría, ajusta el micronicho e idioma para descubrir los **canales con mayor impacto**.")
+elif menu == "🔍 Explorador por Nicho & Micronicho":
+    st.title("🔍 Explorador por Nicho & Micronicho Potente")
+    st.markdown("Selecciona una de las 10 categorías principales de la lista, ajusta el micronicho e idioma para descubrir los canales líderes.")
     
     col_n, col_mn, col_l = st.columns([2, 2, 1])
     
     with col_n:
-        sel_nicho = st.selectbox("📌 Selecciona el Nicho:", list(DICCIONARIO_NICHOS.keys()))
+        sel_nicho = st.selectbox("📌 Selecciona el Nicho Potente:", list(DICCIONARIO_10_NICHOS.keys()))
     with col_mn:
-        sel_micronicho = st.selectbox("🎯 Selecciona el Micronicho:", DICCIONARIO_NICHOS[sel_nicho])
+        sel_micronicho = st.selectbox("🎯 Selecciona el Micronicho:", DICCIONARIO_10_NICHOS[sel_nicho])
     with col_l:
         sel_lang_lbl = st.selectbox("🌐 Idioma:", list(DICCIONARIO_IDIOMAS.keys()))
         sel_lang_code = DICCIONARIO_IDIOMAS[sel_lang_lbl]
         
-    if st.button("🔎 Explorar Mejores Canales"):
-        with st.spinner(f"Buscando los líderes de '{sel_micronicho}'..."):
-            channels = search_channels_by_keyword(youtube, sel_micronicho, lang_code=sel_lang_code, max_results=12)
+    if st.button("🔎 Explorar Canales Líderes"):
+        with st.spinner(f"Buscando canales con más vistas en '{sel_micronicho}'..."):
+            channels = search_channels_global(youtube, sel_micronicho, lang_code=sel_lang_code, max_results=12)
             
             if not channels:
                 st.warning("No se encontraron canales para esta combinación de filtros.")
             else:
                 st.markdown(f"### 🏆 Top Canales Líderes en **{sel_micronicho}**")
                 
-                # Renderizar en Grid de 3 columnas
                 for i in range(0, len(channels), 3):
                     cols = st.columns(3)
                     for j in range(3):
@@ -531,7 +553,7 @@ elif menu == "🔍 Explorador de Nichos y Micronichos":
 # SECCIÓN 4: AUDITORÍA VISUAL DE CANAL
 # ==========================================
 elif menu == "📊 Auditoría Visual de Canal":
-    st.title("📊 Auditoría Estratégica de Canal")
+    st.title("📊 Auditoría Visual de Canal")
     
     channel_query = st.text_input("🔍 Ingresa el Handle o Nombre del Canal a auditar:", "@MrBeast")
     
@@ -572,7 +594,7 @@ elif menu == "📊 Auditoría Visual de Canal":
                 m4.metric("📈 Promedio Vistas/Vídeo", format_num(int(views / max(videos_count, 1))))
                 
                 st.markdown("---")
-                st.subheader("🖼️ Catálogo Reciente: Miniaturas y Desempeño")
+                st.subheader("🖼️ Catálogo Reciente: Miniaturas y Rendimiento")
                 
                 if v_details:
                     for i in range(0, len(v_details), 3):
