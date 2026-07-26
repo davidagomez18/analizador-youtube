@@ -6,17 +6,17 @@ from googleapiclient.discovery import build
 from datetime import datetime, timezone, timedelta
 import re
 
-# Intento de importación de OpenAI con manejo de errores
+# Importación de la librería oficial de Google Gemini
 try:
-    from openai import OpenAI
+    import google.generativeai as genai
 except ImportError:
-    OpenAI = None
+    genai = None
 
 # ==========================================
 # CONFIGURACIÓN Y ESTILOS UI ULTRA-MODERNOS
 # ==========================================
 st.set_page_config(
-    page_title="ViewPulse | Los 10 Nichos Potentes + Creador de Guiones",
+    page_title="ViewPulse | Los 10 Nichos Potentes + Creador Gemini",
     page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -129,6 +129,16 @@ st.markdown("""
         padding: 4px 10px;
         border-radius: 8px;
         font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge-gemini {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3B82F6;
+        border: 1px solid #3B82F6;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
         font-weight: 600;
     }
     
@@ -348,7 +358,7 @@ with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 10px 0;">
         <h2 style="color: #FF0000; margin:0; font-weight: 800;">🚀 ViewPulse</h2>
-        <p style="font-size: 0.8rem; color: #888;">Los 10 Nichos Potentes + Creador IA</p>
+        <p style="font-size: 0.8rem; color: #888;">Los 10 Nichos Potentes + Creador Gemini</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -363,13 +373,13 @@ with st.sidebar:
             "🔗 Canales Relacionados por Nicho",
             "🔍 Explorador por Nicho & Micronicho",
             "📊 Auditoría Visual de Canal",
-            "✍️ Creador Nativo de Guiones",
+            "✍️ Creador Nativo de Guiones (Gemini)",
             "📘 ¿Cómo sacar tu API Key?"
         ]
     )
     
     st.markdown("---")
-    st.caption("🚀 powered by **YouTube Data API & OpenAI**")
+    st.caption("🚀 powered by **YouTube Data API & Google Gemini**")
 
 # ==========================================
 # SECCIÓN: TUTORIAL API KEY
@@ -401,17 +411,17 @@ if menu == "📘 ¿Cómo sacar tu API Key?":
     st.stop()
 
 # ==========================================
-# SECCIÓN: CREADOR NATIVO DE GUIONES CON IA
+# SECCIÓN: CREADOR NATIVO DE GUIONES CON GEMINI (GRATIS)
 # ==========================================
-elif menu == "✍️ Creador Nativo de Guiones":
-    st.title("✍️ Creador Nativo de Guiones Virales con IA")
-    st.markdown("Genera guiones completos estructurados con **ganchos de alta retención** optimizados para los 10 nichos potentes.")
+elif menu == "✍️ Creador Nativo de Guiones (Gemini)":
+    st.title("✍️ Creador Nativo de Guiones Virales con IA (Google Gemini 100% Gratis)")
+    st.markdown("Genera guiones completos estructurados con **ganchos de alta retención** sin costos por API.")
     
     col_api, col_info = st.columns([2, 1])
     with col_api:
-        openai_key = st.text_input("🔑 Tu API Key de OpenAI (sk-...):", type="password", placeholder="sk-proj-...")
+        gemini_key = st.text_input("🔑 Tu API Key de Gemini (AIStudio):", type="password", placeholder="AIzaSy...")
     with col_info:
-        st.caption("💡 ¿Dónde la consigues? En [platform.openai.com](https://platform.openai.com/api-keys) registrándote gratis.")
+        st.caption("💡 Consigue tu clave **gratuita** en [aistudio.google.com](https://aistudio.google.com/) en 30 segundos.")
 
     st.markdown("---")
     
@@ -431,19 +441,20 @@ elif menu == "✍️ Creador Nativo de Guiones":
     
     idea_video = st.text_area("💡 Tema, Idea o Título del Vídeo:", placeholder="Ejemplo: La estafa de la transferencia más cara en la historia del fútbol")
     
-    if st.button("🪄 Generar Guion Viral"):
-        if not openai_key:
-            st.error("⚠️ Necesitas ingresar tu API Key de OpenAI arriba para generar el guion.")
+    if st.button("🪄 Generar Guion Viral con Gemini"):
+        if not gemini_key:
+            st.error("⚠️ Necesitas ingresar tu API Key gratuita de Gemini arriba para generar el guion.")
         elif not idea_video:
             st.warning("⚠️ Ingresa un tema o idea para el vídeo.")
-        elif OpenAI is None:
-            st.error("⚠️ Falta instalar la librería 'openai' en tu servidor. Revisa tu archivo requirements.txt.")
+        elif genai is None:
+            st.error("⚠️ Falta instalar la librería 'google-generativeai' en tu servidor. Revisa tu archivo requirements.txt.")
         else:
             try:
-                client = OpenAI(api_key=openai_key)
+                genai.configure(api_key=gemini_key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
                 
-                with st.spinner("🧠 Redactando estructura, ganchos de retención y guion completo..."):
-                    system_prompt = f"""
+                with st.spinner("🧠 Redactando estructura, ganchos de retención y guion con Gemini..."):
+                    prompt_completo = f"""
                     Eres un guionista senior de YouTube especializado en crear vídeos virales de alta retención para el nicho '{sel_nicho_guion}' (Subnicho: '{sel_micronicho_guion}').
                     Escribes con el tono: {estilo_tono}.
                     
@@ -452,19 +463,16 @@ elif menu == "✍️ Creador Nativo de Guiones":
                     2. INTRODUCCIÓN Y PROMESA (10-30 segundos): Plantea el conflicto principal y qué descubrirán al final.
                     3. DESARROLLO / CUERPO: Dividido en bloques con giros de guion, datos impactantes e indicaciones visuales entre corchetes [ejemplo: [Mostrar miniatura rápida], [Música de tensión aumenta]].
                     4. LLAMADO A LA ACCIÓN (CTA): Una frase orgánica al final para pedir suscripción o comentarios sin cortar el ritmo.
+                    
+                    Idea o tema del vídeo: '{idea_video}'
+                    Duración deseada: '{duracion_guion}'
+                    
+                    Escribe el guion completo formateado y listo para narrar:
                     """
                     
-                    user_prompt = f"Escribe el guion completo para un vídeo formato '{duracion_guion}' sobre la siguiente idea: '{idea_video}'."
+                    response = model.generate_content(prompt_completo)
+                    resultado = response.text
                     
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ]
-                    )
-                    
-                    resultado = response.choices[0].message.content
                     st.markdown("### 📜 Tu Guion Generado:")
                     st.markdown(f'<div class="saas-card">{resultado}</div>', unsafe_allow_html=True)
                     
@@ -475,7 +483,7 @@ elif menu == "✍️ Creador Nativo de Guiones":
                         mime="text/plain"
                     )
             except Exception as e:
-                st.error(f"Error al conectar con la API de OpenAI: {e}")
+                st.error(f"Error al conectar con la API de Gemini: {e}")
     st.stop()
 
 # ==========================================
