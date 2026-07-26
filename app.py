@@ -2,561 +2,409 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 from googleapiclient.discovery import build
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import re
-import math
 
 # ==========================================
-# CONFIGURACIÓN DE PÁGINA Y ESTILO SAAS (DARK MODE / GLASSMORPHISM)
+# CONFIGURACIÓN Y ESTILOS UI ULTRA-MODERNOS
 # ==========================================
 st.set_page_config(
-    page_title="Copiloto Estratégico YouTube | Intelligence SaaS",
-    page_icon="🎯",
+    page_title="ViewPulse SaaS | Intelligence & Trends",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Inyección de CSS Personalizado (Linear / Stripe / Vercel Aesthetic)
+# CSS Personalizado: Dark Glassmorphism, Tarjetas con Miniaturas, Avatares y Grid Responsivo
 st.markdown("""
 <style>
-    /* Estilos generales */
-    .stApp {
-        background-color: #0E1117;
-        color: #E0E0E0;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    
+    * {
+        font-family: 'Plus Jakarta Sans', sans-serif;
     }
     
-    /* Headers y Tarjetas */
-    .metric-card {
-        background: rgba(31, 31, 31, 0.6);
+    .stApp {
+        background-color: #0A0C10;
+        color: #F0F3F9;
+    }
+    
+    /* Tarjeta Neomórfica / Glassmorphism */
+    .saas-card {
+        background: rgba(18, 22, 31, 0.75);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 20px;
-        backdrop-filter: blur(10px);
+        margin-bottom: 20px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    
+    .saas-card:hover {
+        border-color: rgba(255, 0, 0, 0.4);
+        transform: translateY(-2px);
+    }
+    
+    /* Tarjeta de Vídeo */
+    .video-card {
+        background: #12161F;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.06);
         margin-bottom: 15px;
     }
     
-    .kpi-title {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #888888;
-        font-weight: 600;
+    .video-thumb {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     }
     
-    .kpi-value {
-        font-size: 2.2rem;
+    /* Avatar de Canal */
+    .channel-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 2px solid #FF0000;
+        object-fit: cover;
+    }
+    
+    .channel-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    /* Badges de Tendencia y Categoría */
+    .badge-trend {
+        background: linear-gradient(135deg, #FF0000 0%, #B30000 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
         font-weight: 700;
-        color: #FFFFFF;
-        margin: 5px 0;
+        text-transform: uppercase;
     }
     
-    /* Badges de transparencia */
-    .badge-official {
-        background-color: rgba(59, 130, 246, 0.15);
+    .badge-metric {
+        background: rgba(255, 255, 255, 0.08);
         color: #3B82F6;
-        border: 1px solid #3B82F6;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.8rem;
         font-weight: 600;
     }
     
-    .badge-ai {
-        background-color: rgba(22, 199, 132, 0.15);
-        color: #16C784;
-        border: 1px solid #16C784;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    /* Recomendaciones de Decision Engineering */
-    .recommendation-card {
-        background: #191C24;
+    /* Pasos del Tutorial */
+    .step-box {
+        background: rgba(255, 255, 255, 0.03);
         border-left: 4px solid #FF0000;
-        padding: 16px;
-        border-radius: 0 8px 8px 0;
-        margin-bottom: 12px;
+        padding: 15px 20px;
+        border-radius: 0 12px 12px 0;
+        margin-bottom: 15px;
     }
-    .p-high { border-left-color: #E5484D; }
-    .p-medium { border-left-color: #FFB020; }
-    .p-low { border-left-color: #3B82F6; }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# FUNCIONES AUXILIARES Y PARSERS
+# FUNCIONES DE EXTRACCIÓN Y API DE YOUTUBE
 # ==========================================
 def parse_iso_duration(duration_str):
-    """Convierte duraciones ISO 8601 (PT15M33S) a segundos."""
-    if not duration_str:
-        return 0
+    if not duration_str: return 0
     match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration_str)
-    if not match:
-        return 0
-    hours = int(match.group(1) or 0)
-    minutes = int(match.group(2) or 0)
-    seconds = int(match.group(3) or 0)
-    return hours * 3600 + minutes * 60 + seconds
+    if not match: return 0
+    return int(match.group(1) or 0)*3600 + int(match.group(2) or 0)*60 + int(match.group(3) or 0)
 
-def format_number(num):
-    """Formatea números grandes a notación K, M, B."""
-    if num is None:
-        return "N/A"
-    if num >= 1_000_000_000:
-        return f"{num / 1_000_000_000:.2f}B"
-    if num >= 1_000_000:
-        return f"{num / 1_000_000:.2f}M"
-    if num >= 1_000:
-        return f"{num / 1_000:.1f}K"
+def format_num(num):
+    if num is None or num == 0: return "0"
+    if num >= 1_000_000_000: return f"{num/1_000_000_000:.1f}B"
+    if num >= 1_000_000: return f"{num/1_000_000:.1f}M"
+    if num >= 1_000: return f"{num/1_000:.1f}K"
     return str(num)
 
-# ==========================================
-# EXTRACCIÓN Y PROCESAMIENTO DE DATOS (YouTube API v3)
-# ==========================================
-def get_channel_details(youtube, query):
-    """Obtiene metadatos principales del canal buscando por ID, Handle o nombre."""
+def fetch_top_niches_last_month(youtube):
+    """Obtiene los temas y vídeos de mayor rendimiento del último mes."""
+    niches = [
+        {"nombre": "Inteligencia Artificial & Herramientas", "query": "IA herramientas tutorial", "categoria": "Tecnología"},
+        {"nombre": "Finanzas & Cripto", "query": "inversiones finanzas crypto", "categoria": "Negocios"},
+        {"nombre": "Gaming & Esports", "query": "gaming gameplay español", "categoria": "Entretenimiento"},
+        {"nombre": "Productividad & Estilo de Vida", "query": "hábitos rutina productividad", "categoria": "Desarrollo Personal"},
+        {"nombre": "Documentales & Storytelling", "query": "documental misterio historia", "categoria": "Cultura"}
+    ]
+    
+    now = datetime.now(timezone.utc)
+    one_month_ago = (now - timedelta(days=30)).isoformat()
+    
+    results = []
+    for niche in niches:
+        try:
+            res = youtube.search().list(
+                q=niche["query"],
+                type="video",
+                order="viewCount",
+                publishedAfter=one_month_ago,
+                maxResults=3,
+                part="snippet"
+            ).execute()
+            
+            videos = []
+            for item in res.get("items", []):
+                v_id = item["id"]["videoId"]
+                # Detalle de estadísticas del vídeo
+                v_res = youtube.videos().list(part="statistics,contentDetails,snippet", id=v_id).execute()
+                if v_res.get("items"):
+                    v_data = v_res["items"][0]
+                    videos.append({
+                        "titulo": v_data["snippet"]["title"],
+                        "canal": v_data["snippet"]["channelTitle"],
+                        "channel_id": v_data["snippet"]["channelId"],
+                        "vistas": int(v_data["statistics"].get("viewCount", 0)),
+                        "likes": int(v_data["statistics"].get("likeCount", 0)),
+                        "thumb": v_data["snippet"]["thumbnails"]["medium"]["url"]
+                    })
+            
+            results.append({
+                "nicho": niche["nombre"],
+                "categoria": niche["categoria"],
+                "videos": videos
+            })
+        except Exception:
+            pass
+    return results
+
+def get_channel_complete_info(youtube, query):
+    """Obtiene datos completos del canal incluyendo logo HD."""
     try:
-        # 1. Intentar por Handle o ID directo
         if query.startswith("@") or query.startswith("UC"):
             res = youtube.channels().list(
-                part="snippet,statistics,contentDetails,brandingSettings",
+                part="snippet,statistics,contentDetails",
                 forHandle=query if query.startswith("@") else None,
                 id=query if query.startswith("UC") else None
             ).execute()
         else:
-            # 2. Buscar por nombre
-            search_res = youtube.search().list(q=query, type="channel", maxResults=1, part="id").execute()
-            if not search_res.get("items"):
-                return None
-            channel_id = search_res["items"][0]["id"]["channelId"]
-            res = youtube.channels().list(
-                part="snippet,statistics,contentDetails,brandingSettings",
-                id=channel_id
-            ).execute()
+            s_res = youtube.search().list(q=query, type="channel", maxResults=1, part="id").execute()
+            if not s_res.get("items"): return None, None
+            c_id = s_res["items"][0]["id"]["channelId"]
+            res = youtube.channels().list(part="snippet,statistics,contentDetails", id=c_id).execute()
             
-        if res.get("items"):
-            return res["items"][0]
-        return None
-    except Exception as e:
-        st.error(f"Error al conectar con YouTube Data API: {e}")
-        return None
-
-def get_channel_videos(youtube, uploads_playlist_id, max_results=50):
-    """Obtiene los últimos N videos subidos con métricas detalladas."""
-    try:
-        playlist_items = []
-        next_page = None
+        if not res.get("items"): return None, None
         
-        while len(playlist_items) < max_results:
-            fetch_count = min(50, max_results - len(playlist_items))
-            res = youtube.playlistItems().list(
-                part="snippet,contentDetails",
-                playlistId=uploads_playlist_id,
-                maxResults=fetch_count,
-                pageToken=next_page
-            ).execute()
-            
-            playlist_items.extend(res.get("items", []))
-            next_page = res.get("nextPageToken")
-            if not next_page:
-                break
-                
-        video_ids = [item["contentDetails"]["videoId"] for item in playlist_items]
-        if not video_ids:
-            return pd.DataFrame()
-            
-        # Obtener detalles completos de los videos
-        video_details = []
-        for i in range(0, len(video_ids), 50):
-            chunk = video_ids[i:i+50]
-            v_res = youtube.videos().list(
-                part="snippet,statistics,contentDetails",
-                id=",".join(chunk)
-            ).execute()
-            video_details.extend(v_res.get("items", []))
-            
-        processed_videos = []
-        now = datetime.now(timezone.utc)
+        ch_item = res["items"][0]
+        uploads_id = ch_item["contentDetails"]["relatedPlaylists"]["uploads"]
         
-        for v in video_details:
-            snippet = v.get("snippet", {})
-            stats = v.get("statistics", {})
-            content = v.get("contentDetails", {})
+        # Obtener vídeos
+        p_res = youtube.playlistItems().list(
+            part="snippet,contentDetails", playlistId=uploads_id, maxResults=12
+        ).execute()
+        
+        v_ids = [item["contentDetails"]["videoId"] for item in p_res.get("items", [])]
+        v_details = []
+        if v_ids:
+            vd_res = youtube.videos().list(part="snippet,statistics,contentDetails", id=",".join(v_ids)).execute()
+            v_details = vd_res.get("items", [])
             
-            pub_date = datetime.fromisoformat(snippet.get("publishedAt").replace("Z", "+00:00"))
-            days_old = max((now - pub_date).days, 1)
-            duration_sec = parse_iso_duration(content.get("duration", ""))
-            is_short = duration_sec > 0 and duration_sec <= 60
-            
-            views = int(stats.get("viewCount", 0))
-            likes = int(stats.get("likeCount", 0))
-            comments = int(stats.get("commentCount", 0))
-            
-            # Métricas calculadas
-            engagement_rate = ((likes + comments) / views * 100) if views > 0 else 0
-            velocity = views / days_old
-            
-            processed_videos.append({
-                "video_id": v["id"],
-                "titulo": snippet.get("title", ""),
-                "publicado_el": pub_date,
-                "antiguedad_dias": days_old,
-                "duracion_segundos": duration_sec,
-                "es_short": is_short,
-                "vistas": views,
-                "likes": likes,
-                "comentarios": comments,
-                "engagement_rate": round(engagement_rate, 2),
-                "velocidad_vistas_dia": round(velocity, 2),
-                "tags": snippet.get("tags", []),
-                "miniatura": snippet.get("thumbnails", {}).get("medium", {}).get("url", "")
-            })
-            
-        return pd.DataFrame(processed_videos)
+        return ch_item, v_details
     except Exception as e:
-        st.error(f"Error procesando lista de videos: {e}")
-        return pd.DataFrame()
+        return None, None
 
 # ==========================================
-# MOTOR DE ÍNDICES E INTELIGENCIA (0-100)
-# ==========================================
-def calculate_channel_indexes(df_videos, channel_stats):
-    """Calcula los 10 Índices Estratégicos basados en heuristicas y ciencia de datos."""
-    if df_videos.empty:
-        return {k: 50 for k in ["salud", "consistencia", "seo", "originalidad", "viralidad", "escalabilidad", "nicho", "titulos", "miniaturas", "potencial"]}
-    
-    # 1. Consistencia (Intervalo entre publicaciones)
-    dates = df_videos["publicado_el"].sort_values()
-    diffs = dates.diff().dt.total_seconds() / (24 * 3600)
-    std_diffs = diffs.std()
-    score_consistencia = min(100, max(10, int(100 - (std_diffs if not math.isnan(std_diffs) else 20) * 3)))
-    
-    # 2. SEO Score (Uso de tags, longitud de títulos)
-    titles = df_videos["titulo"]
-    avg_title_len = titles.apply(len).mean()
-    has_tags = df_videos["tags"].apply(lambda x: len(x) > 0).mean()
-    score_seo = min(100, int((min(avg_title_len / 70, 1.0) * 50) + (has_tags * 50)))
-    
-    # 3. Viralidad Estimada (Proporción de Outliers > 3x mediana)
-    median_views = df_videos["vistas"].median()
-    outliers = (df_videos["vistas"] > (median_views * 3)).sum() if median_views > 0 else 0
-    score_viralidad = min(100, int((outliers / len(df_videos)) * 300) + 20)
-    
-    # 4. Originalidad (Diversidad semántica de palabras clave)
-    words = " ".join(titles).lower().split()
-    unique_words_ratio = len(set(words)) / max(len(words), 1)
-    score_originalidad = min(100, int(unique_words_ratio * 150))
-    
-    # 5. Escalabilidad (Balance Shorts vs Largos)
-    shorts_pct = df_videos["es_short"].mean()
-    score_escalabilidad = int(100 - abs(shorts_pct - 0.3) * 100) # Óptimo ~ 30% shorts, 70% largo
-    
-    # 6. Salud General
-    avg_engagement = df_videos["engagement_rate"].mean()
-    score_salud = int((score_consistencia * 0.3) + (score_seo * 0.2) + (min(avg_engagement * 15, 100) * 0.3) + (score_viralidad * 0.2))
-    
-    return {
-        "salud": max(0, min(100, score_salud)),
-        "consistencia": max(0, min(100, score_consistencia)),
-        "seo": max(0, min(100, score_seo)),
-        "originalidad": max(0, min(100, score_originalidad)),
-        "viralidad": max(0, min(100, score_viralidad)),
-        "escalabilidad": max(0, min(100, score_escalabilidad)),
-        "nicho": int(np.random.normal(75, 5)), # Simulación razonada
-        "titulos": int(min(100, avg_title_len * 1.2)),
-        "miniaturas": int(np.random.normal(80, 8)),
-        "potencial": min(100, int((score_salud + score_viralidad) / 1.6))
-    }
-
-# ==========================================
-# BARRA LATERAL Y NAVEGACIÓN
+# BARRA LATERAL (CONFIGURACIÓN Y MENU)
 # ==========================================
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg", width=140)
-    st.title("Copiloto SaaS v2.0")
+    st.markdown("""
+    <div style="text-align: center; padding: 10px 0;">
+        <h2 style="color: #FF0000; margin:0; font-weight: 800;">⚡ ViewPulse</h2>
+        <p style="font-size: 0.8rem; color: #888;">YouTube Intelligence Platform</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    api_key = st.text_input("🔑 YouTube Data API Key:", type="password")
-    channel_query = st.text_input("🔍 Canal (ID, @Handle o Nombre):", "@MrBeast")
+    api_key = st.text_input("🔑 Tu Clave API de YouTube:", type="password", placeholder="AIzaSy...")
     
     st.markdown("---")
     
-    nav_option = st.radio(
-        "Navegación Estratégica:",
+    menu = st.radio(
+        "Navegación:",
         [
-            "🏠 1. Dashboard Ejecutivo",
-            "📋 2. Perfil & Auditoría General",
-            "🎯 3. Auditoría de Nicho",
-            "📅 4. Consistencia & Evolución",
-            "🎬 5. Auditoría de Videos & Outliers",
-            "🧠 6. Patrones & Alertas IA",
-            "⚖️ 7. Comparador de Canales",
-            "🔮 8. Ingeniería de Decisiones & ML",
-            "🎛️ 9. Simulador Estratégico",
-            "💬 10. Copiloto IA Conversacional"
+            "🔥 Top Nichos del Último Mes",
+            "📊 Auditoría Visual de Canal",
+            "📘 ¿Cómo sacar tu API Key?"
         ]
     )
     
     st.markdown("---")
-    st.caption("🛡️ Datos extraídos vía **YouTube Data API v3**. Análisis algorítmico e IA aplicada.")
+    st.caption("🚀 powered by **YouTube Data API v3**")
 
 # ==========================================
-# FLUJO PRINCIPAL
+# SECCIÓN 1: TUTORIAL DE API KEY (SIEMPRE DISPONIBLE)
 # ==========================================
-if not api_key:
-    st.info("👈 Ingresa tu API Key de Google Cloud en el menú lateral para iniciar la auditoría.")
-    st.stop()
-
-@st.cache_data(ttl=3600, show_spinner=False)
-def load_all_data(key, query):
-    youtube = build("youtube", "v3", developerKey=key)
-    ch_data = get_channel_details(youtube, query)
-    if not ch_data:
-        return None, None
-    
-    uploads_playlist = ch_data["contentDetails"]["relatedPlaylists"]["uploads"]
-    df_v = get_channel_videos(youtube, uploads_playlist, max_results=50)
-    return ch_data, df_v
-
-with st.spinner("⚡ Extrayendo datos públicos y ejecutando modelos de inteligencia..."):
-    channel_data, df_videos = load_all_data(api_key, channel_query)
-
-if not channel_data:
-    st.error("❌ No se encontró el canal especificado. Verifica el Handle o ID ingresado.")
-    st.stop()
-
-# Extracción de variables base
-snippet = channel_data["snippet"]
-statistics = channel_data["statistics"]
-title = snippet["title"]
-subs = int(statistics.get("subscriberCount", 0)) if not statistics.get("hiddenSubscriberCount") else None
-total_views = int(statistics.get("viewCount", 0))
-total_videos = int(statistics.get("videoCount", 0))
-
-indexes = calculate_channel_indexes(df_videos, statistics)
-
-# Header Superior Global
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
-    st.title(f"📊 Auditoría: {title}")
-    st.markdown(f"**ID:** `{channel_data['id']}` | **País:** {snippet.get('country', 'N/A')} | **Creación:** {snippet['publishedAt'][:10]}")
-with col_h2:
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<span class="badge-official">DATOS OFICIALES API v3</span> <span class="badge-ai">MODELO PREDICTIVO IA</span>', unsafe_allow_html=True)
-
-st.markdown("---")
-
-# ==========================================
-# MÓDULO 1: DASHBOARD EJECUTIVO
-# ==========================================
-if "1. Dashboard Ejecutivo" in nav_option:
-    st.subheader("🎯 Estado General del Canal (Índices 0-100)")
-    
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Salud General", f"{indexes['salud']}/100", "+3 pts vs mes ant.")
-    c2.metric("Consistencia", f"{indexes['consistencia']}/100", "-2 pts")
-    c3.metric("SEO Score", f"{indexes['seo']}/100", "+5 pts")
-    c4.metric("Viralidad Estimada", f"{indexes['viralidad']}/100", "Estable")
-    c5.metric("Escalabilidad", f"{indexes['escalabilidad']}/100", "+1 pt")
-
-    col_g1, col_g2 = st.columns([2, 1])
-    
-    with col_g1:
-        st.subheader("🕸️ Radar de Capacidades Estratégicas")
-        radar_df = pd.DataFrame(dict(
-            r=[indexes['salud'], indexes['consistencia'], indexes['seo'], indexes['originalidad'], indexes['viralidad'], indexes['escalabilidad']],
-            theta=['Salud', 'Consistencia', 'SEO', 'Originalidad', 'Viralidad', 'Escalabilidad']
-        ))
-        fig_radar = px.line_polar(radar_df, r='r', theta='theta', line_close=True, template="plotly_dark")
-        fig_radar.update_traces(fill='toself', line_color='#FF0000')
-        st.plotly_chart(fig_radar, use_container_width=True)
-        
-    with col_g2:
-        st.subheader("🚦 Diagnóstico de Riesgos")
-        st.markdown("""
-        * **Riesgo de Estancamiento:** <span style='color:#16C784;font-weight:bold;'>BAJO (18%)</span>
-        * **Competencia del Nicho:** <span style='color:#FFB020;font-weight:bold;'>ALTA</span>
-        * **Dependencia de Algoritmo:** <span style='color:#E5484D;font-weight:bold;'>CRÍTICA (Shorts)</span>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        st.subheader("💡 Decisión Clave Inmediata")
-        st.info("El índice de **Consistencia** descendió. Mantener la ventana de publicación fija aumentaría la recomendación algorítmica un 14% estimado.")
-
-# ==========================================
-# MÓDULO 2: PERFIL & AUDITORÍA GENERAL
-# ==========================================
-elif "2. Perfil & Auditoría General" in nav_option:
-    st.subheader("📋 Métricas del Catálogo")
-    
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Suscriptores Públicos", format_number(subs) if subs else "Oculto")
-    k2.metric("Vistas Acumuladas", format_number(total_views))
-    k3.metric("Total de Videos Subidos", format_number(total_videos))
-    
-    shorts_count = df_videos["es_short"].sum() if not df_videos.empty else 0
-    longs_count = len(df_videos) - shorts_count if not df_videos.empty else 0
-    k4.metric("Proporción (Últimos 50)", f"📹 {longs_count} | ⚡ {shorts_count}")
-    
-    st.markdown("### 📝 Descripción Oficial del Canal")
-    st.text_area("", snippet.get("description", "Sin descripción"), height=120)
-
-# ==========================================
-# MÓDULO 3: AUDITORÍA DE NICHO
-# ==========================================
-elif "3. Auditoría de Nicho" in nav_option:
-    st.subheader("🎯 Análisis de Especialización y Micronicho")
-    
-    col_n1, col_n2 = st.columns(2)
-    
-    with col_n1:
-        st.markdown("""
-        * **¿El nicho es claro?:** Sí, alta coherencia semántica en títulos.
-        * **Riesgo de confusión temática:** <span style='color:#16C784;'>BAJO (12%)</span>
-        * **Nivel de Especialización:** `Hyper-focused`
-        """, unsafe_allow_html=True)
-        
-        fig_donut = px.pie(
-            values=[indexes['nicho'], 100 - indexes['nicho']], 
-            names=['Coherencia de Nicho', 'Diversificación'],
-            hole=0.6,
-            color_discrete_sequence=['#FF0000', '#333333']
-        )
-        st.plotly_chart(fig_donut, use_container_width=True)
-        
-    with col_n2:
-        st.subheader("💰 Potencial Económico Estimado (CPM/RPM)")
-        st.caption("🤖 Estimación basada en nicho detectado y audiencia geográfica pública.")
-        
-        st.metric("RPM Estimado", "$1.80 - $4.50 USD")
-        st.metric("Ingreso Mensual Estimado Vistas Públicas", "$1,200 - $3,500 USD")
-        st.warning("⚠️ Nota: YouTube Data API v3 no entrega datos de ingresos reales. Estas cifras son modelos teóricos.")
-
-# ==========================================
-# MÓDULO 4: CONSISTENCIA & EVOLUCIÓN
-# ==========================================
-elif "4. Consistencia & Evolución" in nav_option:
-    st.subheader("📅 Frecuencia y Ritmo de Publicación")
-    
-    if not df_videos.empty:
-        fig_timeline = px.bar(
-            df_videos, x="publicado_el", y="vistas", 
-            color="es_short",
-            title="Historial de Publicaciones y Vistas (Últimos 50 videos)",
-            labels={"es_short": "¿Es Short?", "vistas": "Vistas Totales"},
-            template="plotly_dark",
-            color_discrete_map={True: "#FFB020", False: "#FF0000"}
-        )
-        st.plotly_chart(fig_timeline, use_container_width=True)
-
-# ==========================================
-# MÓDULO 5: AUDITORÍA DE VIDEOS & OUTLIERS
-# ==========================================
-elif "5. Auditoría de Videos" in nav_option:
-    st.subheader("🎬 Desempeño Individual de Contenidos")
-    
-    if not df_videos.empty:
-        # Selector de ordenamiento
-        sort_by = st.selectbox("Ordenar catálogo por:", ["vistas", "engagement_rate", "velocidad_vistas_dia"])
-        df_sorted = df_videos.sort_values(by=sort_by, ascending=False)
-        
-        st.dataframe(
-            df_sorted[["titulo", "vistas", "likes", "comentarios", "engagement_rate", "velocidad_vistas_dia", "es_short", "publicado_el"]],
-            use_container_width=True
-        )
-
-# ==========================================
-# MÓDULO 6: PATRONES & ALERTAS IA
-# ==========================================
-elif "6. Patrones & Alertas IA" in nav_option:
-    st.subheader("🧠 Detección Automática de Patrones Ganadores")
-    
-    col_p1, col_p2 = st.columns(2)
-    
-    with col_p1:
-        st.markdown("### 🏆 Temas y Palabras Más Exitosas")
-        if not df_videos.empty:
-            all_titles = " ".join(df_videos["titulo"]).lower()
-            words = [w for w in re.findall(r'\w+', all_titles) if len(w) > 3]
-            top_words = pd.Series(words).value_counts().head(8).reset_index()
-            top_words.columns = ["Palabra Clave", "Frecuencia"]
-            st.dataframe(top_words, use_container_width=True)
-            
-    with col_p2:
-        st.markdown("### ⚠️ Sistema Inteligente de Alertas")
-        st.markdown("""
-        <div class="recommendation-card p-high">
-            <strong>🔴 Alerta Crítica:</strong> La duración media de los videos largos descendió de 12 min a 6 min. Esto afecta el inventario publicitario.
-        </div>
-        <div class="recommendation-card p-medium">
-            <strong>🟡 Oportunidad:</strong> Los videos publicados los días Viernes tienen un 42% más de velocidad de vistas iniciales.
-        </div>
-        """, unsafe_allow_html=True)
-
-# ==========================================
-# MÓDULO 7: COMPARADOR DE CANALES
-# ==========================================
-elif "7. Comparador de Canales" in nav_option:
-    st.subheader("⚖️ Benchmarking de Canales (Side-by-Side)")
-    st.caption("Compara este canal contra competidores directos.")
-    
-    comp_query = st.text_input("Ingresa el Handle del canal competidor:", "@PewDiePie")
-    if st.button("Comparar Métricas"):
-        st.info(f"Comparando {title} vs {comp_query}...")
-        st.json({"Canal A (Actual)": {"Vistas": total_views, "Videos": total_videos}, "Canal B": {"Estado": "Procesando..."}})
-
-# ==========================================
-# MÓDULO 8: INGENIERÍA DE DECISIONES & ML
-# ==========================================
-elif "8. Ingeniería de Decisiones" in nav_option:
-    st.subheader("🔮 Plan de Acción y Predicciones de Crecimiento")
-    
-    st.markdown("### 🗺️ Matriz Prescriptiva de Decisiones")
+if menu == "📘 ¿Cómo sacar tu API Key?":
+    st.title("📘 Cómo obtener tu API Key de YouTube en 3 minutos")
+    st.markdown("Sigue estos sencillos pasos para activar tu clave de acceso **100% gratuita** con Google:")
     
     st.markdown("""
-    <div class="recommendation-card p-high">
-        <h4>1. Crear Serie de 3 Partes sobre la tematica 'Outlier'</h4>
-        <p><strong>Prioridad:</strong> ALTA | <strong>Impacto Esperado:</strong> +35% vistas | <strong>Confianza Modelo:</strong> 91%</p>
-        <p><em>Explicación:</em> El video con mayor velocidad de vistas superó en 4.2x la mediana del canal. Replicar el formato genera retención de audiencia recurrente.</p>
+    <div class="step-box">
+        <h4>Paso 1: Entrar a Google Cloud Console</h4>
+        <p>Ve a <a href="https://console.cloud.google.com/" target="_blank" style="color:#3B82F6;">console.cloud.google.com</a> e inicia sesión con cualquier cuenta de Gmail.</p>
     </div>
-    <div class="recommendation-card p-medium">
-        <h4>2. Optimizar Estructura de Títulos (Efecto SEO)</h4>
-        <p><strong>Prioridad:</strong> MEDIA | <strong>Impacto Esperado:</strong> +12% tráfico de búsqueda | <strong>Confianza Modelo:</strong> 84%</p>
-        <p><em>Explicación:</em> Los títulos entre 45 y 60 caracteres presentan mejor rendimiento en el algoritmo de búsqueda de YouTube.</p>
+    
+    <div class="step-box">
+        <h4>Paso 2: Crear un Proyecto Nuevo</h4>
+        <p>En el menú superior azul, haz clic en el desplegable de proyectos y selecciona <strong>"Proyecto Nuevo"</strong>. Ponle de nombre <code>Analizador-YouTube</code> y dale a <strong>Crear</strong>.</p>
+    </div>
+    
+    <div class="step-box">
+        <h4>Paso 3: Activar la YouTube Data API v3</h4>
+        <p>En el buscador superior de la página, escribe <code>YouTube Data API v3</code>, entra en el resultado y presiona el botón azul grande de <strong>HABILITAR</strong>.</p>
+    </div>
+    
+    <div class="step-box">
+        <h4>Paso 4: Generar la Clave</h4>
+        <p>En el menú lateral izquierdo, ve a <strong>Credenciales</strong> ➔ haz clic en <strong>"+ Crear credenciales"</strong> (arriba) ➔ elige <strong>"Clave de API"</strong>.</p>
+    </div>
+    
+    <div class="step-box">
+        <h4>Paso 5: Copiar y Usar</h4>
+        <p>Copia el código largo que empieza por <code>AIzaSy...</code> y pégalo en la casilla de la izquierda en esta app. ¡Listo!</p>
     </div>
     """, unsafe_allow_html=True)
+    st.stop()
+
+# Si no hay API key ingresada, mostrar advertencia y guía rápida
+if not api_key:
+    st.warning("👈 Por favor, ingresa tu **API Key de YouTube** en el menú de la izquierda para comenzar.")
+    st.info("💡 ¿No tienes una clave aún? Selecciona la opción **'📘 ¿Cómo sacar tu API Key?'** en el menú lateral.")
+    st.stop()
+
+# Inicializar cliente de YouTube
+try:
+    youtube = build("youtube", "v3", developerKey=api_key)
+except Exception as e:
+    st.error("Error al autenticar la API Key. Verifica que esté correctamente copiada.")
+    st.stop()
 
 # ==========================================
-# MÓDULO 9: SIMULADOR ESTRATÉGICO
+# SECCIÓN 2: PANTALLA PRINCIPAL - TOP NICHOS DEL ÚLTIMO MES
 # ==========================================
-elif "9. Simulador Estratégico" in nav_option:
-    st.subheader("🎛️ Simulador de Escenarios de Crecimiento")
-    st.caption("Ajusta las variables operativas para simular la proyección de rendimiento.")
+if menu == "🔥 Top Nichos del Último Mes":
+    st.title("🔥 Nichos y Tendencias con Mayor Crecimiento (Últimos 30 Días)")
+    st.markdown("Análisis automático del mercado en YouTube para identificar temas con alta tracción y vídeos más virales.")
     
-    sim_freq = st.slider("Videos largos por semana:", 1, 7, 2)
-    sim_shorts = st.slider("Shorts por semana:", 0, 14, 3)
-    sim_niche = st.slider("Enfoque/Especialización del Nicho (%):", 50, 100, 85)
-    
-    # Modelo matemático de proyección simple
-    proyeccion_vistas = (total_views * 0.05) * (sim_freq * 1.2) * (1 + (sim_shorts * 0.05)) * (sim_niche / 100)
-    
-    st.markdown("---")
-    st.subheader("📈 Resultado de la Simulación (A 90 Días)")
-    st.metric("Vistas Adicionales Estimadas", format_number(int(proyeccion_vistas)))
-    st.metric("Impacto en Índice de Salud", f"{min(100, int(indexes['salud'] + (sim_freq * 2)))} / 100")
+    with st.spinner("🔍 Analizando tendencias globales del último mes en YouTube..."):
+        top_data = fetch_top_niches_last_month(youtube)
+        
+    if not top_data:
+        st.error("No se pudieron cargar las tendencias. Asegúrate de que tu API Key sea válida.")
+    else:
+        for item in top_data:
+            st.markdown(f"""
+            <div class="saas-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin:0; color:#FFF;">📌 {item['nicho']}</h3>
+                    <span class="badge-trend">{item['categoria']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Columnas de vídeos del nicho con Miniaturas y Canales
+            cols = st.columns(len(item["videos"]))
+            for idx, vid in enumerate(item["videos"]):
+                with cols[idx]:
+                    st.markdown(f"""
+                    <div class="video-card">
+                        <img src="{vid['thumb']}" class="video-thumb" />
+                        <div style="padding: 12px;">
+                            <p style="font-weight:700; font-size:0.85rem; margin-bottom:5px; height: 40px; overflow: hidden; color: #FFF;">{vid['titulo']}</p>
+                            <p style="font-size:0.75rem; color:#888; margin-bottom:8px;">📺 <strong>{vid['canal']}</strong></p>
+                            <div style="display:flex; gap:8px;">
+                                <span class="badge-metric">👁️ {format_num(vid['vistas'])}</span>
+                                <span class="badge-metric">👍 {format_num(vid['likes'])}</span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
-# MÓDULO 10: COPILOTO IA CONVERSACIONAL
+# SECCIÓN 3: AUDITORÍA VISUAL DE CANAL CON MINIATURAS Y LOGO
 # ==========================================
-elif "10. Copiloto IA Conversacional" in nav_option:
-    st.subheader("💬 Asistente Conversacional para la Auditoría")
-    st.caption("Haz preguntas directamente sobre los datos analizados del canal.")
+elif menu == "📊 Auditoría Visual de Canal":
+    st.title("📊 Auditoría Estratégica de Canal")
     
-    user_q = st.text_input("Pregunta al Copiloto (Ej: ¿Qué debo hacer para subir mis vistas?):")
-    if user_q:
-        st.markdown(f"🤖 **Respuesta de la IA basada en {title}:**")
-        st.write(f"Analizando tu consulta sobre *'{user_q}'*: Basado en el catálogo analizado con {total_videos} videos y un Índice de Consistencia de {indexes['consistencia']}/100, la acción principal recomendada es estabilizar tu calendario de publicaciones y duplicar la producción en los temas con mayor velocidad de vistas.")
+    channel_query = st.text_input("🔍 Ingresa el Handle o Nombre del Canal a auditar:", "@MrBeast")
+    
+    if st.button("🚀 Iniciar Análisis Visual"):
+        with st.spinner("Cargando perfil, miniaturas y métricas del canal..."):
+            ch_data, v_details = get_channel_complete_info(youtube, channel_query)
+            
+            if not ch_data:
+                st.error("No se encontró el canal. Verifica el nombre o handle ingresado.")
+            else:
+                snippet = ch_data["snippet"]
+                stats = ch_data["statistics"]
+                
+                logo_url = snippet["thumbnails"]["high"]["url"]
+                title = snippet["title"]
+                desc = snippet.get("description", "Sin descripción disponible.")
+                subs = int(stats.get("subscriberCount", 0)) if not stats.get("hiddenSubscriberCount") else None
+                views = int(stats.get("viewCount", 0))
+                videos_count = int(stats.get("videoCount", 0))
+                
+                # --- HEADER CON LOGO Y DATOS ---
+                st.markdown(f"""
+                <div class="saas-card">
+                    <div class="channel-header">
+                        <img src="{logo_url}" class="channel-avatar" />
+                        <div>
+                            <h2 style="margin:0; color:#FFF;">{title}</h2>
+                            <p style="margin:0; color:#888; font-size:0.85rem;">ID: {ch_data['id']} | País: {snippet.get('country', 'N/A')}</p>
+                        </div>
+                    </div>
+                    <p style="font-size:0.85rem; color:#CCC; line-height:1.4;">{desc[:250]}...</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # METRICAS CLAVE
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("👥 Suscriptores", format_num(subs) if subs else "Ocultos")
+                m2.metric("👁️ Vistas Totales", format_num(views))
+                m3.metric("🎬 Total de Vídeos", format_num(videos_count))
+                
+                avg_views = int(views / max(videos_count, 1))
+                m4.metric("📈 Promedio Vistas/Vídeo", format_num(avg_views))
+                
+                st.markdown("---")
+                st.subheader("🖼️ Catálogo Reciente: Miniaturas y Desempeño")
+                
+                if v_details:
+                    # Mostrar vídeos en un Grid Visual de 3 columnas
+                    for i in range(0, len(v_details), 3):
+                        cols = st.columns(3)
+                        for j in range(3):
+                            if i + j < len(v_details):
+                                v = v_details[i + j]
+                                v_snip = v["snippet"]
+                                v_stat = v.get("statistics", {})
+                                
+                                v_thumb = v_snip["thumbnails"]["medium"]["url"]
+                                v_title = v_snip["title"]
+                                v_views = int(v_stat.get("viewCount", 0))
+                                v_likes = int(v_stat.get("likeCount", 0))
+                                v_comments = int(v_stat.get("commentCount", 0))
+                                
+                                with cols[j]:
+                                    st.markdown(f"""
+                                    <div class="video-card">
+                                        <img src="{v_thumb}" class="video-thumb" />
+                                        <div style="padding: 12px;">
+                                            <p style="font-weight:700; font-size:0.85rem; margin-bottom:8px; height: 40px; overflow: hidden; color: #FFF;">{v_title}</p>
+                                            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                                <span class="badge-metric">👁️ {format_num(v_views)} vistas</span>
+                                                <span class="badge-metric">👍 {format_num(v_likes)}</span>
+                                            </div>
+                                            <p style="font-size:0.75rem; color:#888; margin-top:5px;">💬 {format_num(v_comments)} comentarios</p>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
