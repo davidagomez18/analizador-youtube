@@ -7,11 +7,11 @@ from datetime import datetime, timezone, timedelta
 import re
 
 # ==========================================
-# CONFIGURACIÓN Y ESTILOS UI ULTRA-MODERNOS
+# CONFIGURACIÓN Y ESTILOS UI ULTRA-MODERNOS (AI FOCUS)
 # ==========================================
 st.set_page_config(
-    page_title="ViewPulse SaaS | Intelligence & Discovery",
-    page_icon="⚡",
+    page_title="ViewPulse AI | YouTube AI Channel Intelligence",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -117,6 +117,16 @@ st.markdown("""
         text-transform: uppercase;
     }
     
+    .badge-ai {
+        background: rgba(22, 199, 132, 0.15);
+        color: #16C784;
+        border: 1px solid #16C784;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
     .badge-metric {
         background: rgba(255, 255, 255, 0.08);
         color: #3B82F6;
@@ -138,43 +148,43 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# DICCIONARIO DE NICHOS Y MICRONICHOS
+# DICCIONARIO ESPECÍFICO DE NICHOS IA
 # ==========================================
-DICCIONARIO_NICHOS = {
-    "Tecnología e Inteligencia Artificial": [
-        "Inteligencia Artificial y Tools",
-        "Ciberseguridad y Hacking Ético",
-        "Smartphones y Reviews de Gadgets",
-        "Programación y Desarrollo Software",
-        "Tecnología Futurista y Ciencia"
+DICCIONARIO_NICHOS_IA = {
+    "🎬 Canales Faceless & Historias IA": [
+        "Historias de Terror y Misterio IA",
+        "Documentales e Historia Antigua IA",
+        "Filosofía, Estoicismo y Motivación IA",
+        "Cuentos y Leyendas Animadas IA",
+        "Casos Criminales y True Crime IA"
     ],
-    "Finanzas, Negocios y Cripto": [
-        "Inversiones y Bolsa de Valores",
-        "Criptomonedas y Web3",
-        "Emprendimiento y E-commerce",
-        "Finanzas Personales y Ahorro",
-        "Bienes Raíces / Real Estate"
+    "🤖 Avatares & Presentadores Sintéticos": [
+        "Noticias y Actualidad con Avatares IA",
+        "Explicaciones Científicas y Espacio IA",
+        "Finanzas y Cripto con Presentador IA",
+        "Salud, Curiosidades y Biología IA",
+        "Resúmenes de Libros y Desarrollo IA"
     ],
-    "Gaming y Esports": [
-        "Minecraft y Sandbox",
-        "Shooters (Valorant, CoD, Fortnite)",
-        "Guias y Lore de RPGs",
-        "Noticias de Gaming y Consolas",
-        "Esports y Competición"
+    "⚡ Shorts Virales & Contenido Rápido IA": [
+        "Curiosidades y Datos 'Sabías Que' IA",
+        "Quiz, Acertijos y Preguntas IA",
+        "Comparativas y Escalas Visuales IA",
+        "Historias Bíblicas o Mitología IA",
+        "Lifehacks y Experimentos IA"
     ],
-    "Desarrollo Personal y Estilo de Vida": [
-        "Productividad y Hábitos",
-        "Fitness, Calistenia y Nutrición",
-        "Viajes y Vlogs de Estilo de Vida",
-        "Minimalismo y Organización",
-        "Biohacking y Salud Mental"
+    "🎵 Música, Relax y Contenido Sensorial IA": [
+        "Música Lo-Fi y Beats Creados con IA",
+        "Frecuencias de Meditación y Relax IA",
+        "ASMR Visual y Animaciones IA",
+        "Canciones y Parodias Generadas con IA",
+        "Fondos de Pantalla Animados IA"
     ],
-    "Entretenimiento y Cultura Pop": [
-        "Cine, Series y Análisis de Guion",
-        "Documentales y Casos Misteriosos",
-        "Curiosidades y Datos Fascinantes",
-        "Humor y Comedia",
-        "Música, Beats y Producción"
+    "🚀 Automatización & Herramientas de IA": [
+        "Canales de Automatización de YouTube",
+        "Tutoriales de HeyGen / Midjourney / ElevenLabs",
+        "Creación de Vídeos Automatizados",
+        "Monetización de Canales Faceless IA",
+        "Agentes y Herramientas IA para Creadores"
     ]
 }
 
@@ -196,20 +206,21 @@ def format_num(num):
     if num >= 1_000: return f"{num/1_000:.1f}K"
     return str(num)
 
-def fetch_top_niches_last_month(youtube):
-    niches = [
-        {"nombre": "Inteligencia Artificial & Herramientas", "query": "IA herramientas tutorial", "categoria": "Tecnología"},
-        {"nombre": "Finanzas & Cripto", "query": "inversiones finanzas crypto", "categoria": "Negocios"},
-        {"nombre": "Gaming & Esports", "query": "gaming gameplay español", "categoria": "Entretenimiento"},
-        {"nombre": "Productividad & Estilo de Vida", "query": "hábitos rutina productividad", "categoria": "Desarrollo Personal"},
-        {"nombre": "Documentales & Storytelling", "query": "documental misterio historia", "categoria": "Cultura"}
+def fetch_top_ai_niches_last_month(youtube):
+    """Busca los vídeos y canales basados en IA con más vistas en los últimos 30 días."""
+    niches_ia = [
+        {"nombre": "Historias & Documentales IA", "query": "historia IA generado faceless", "categoria": "Faceless IA"},
+        {"nombre": "Shorts Virales & Curiosidades IA", "query": "datos curiosos IA shorts faceless", "categoria": "Shorts IA"},
+        {"nombre": "Avatares & Noticias IA", "query": "avatar IA noticias explicacion", "categoria": "Sintéticos"},
+        {"nombre": "Música & Lo-Fi Generado con IA", "query": "lofi AI generated music relax", "categoria": "Audio IA"},
+        {"nombre": "Automatización de Canales IA", "query": "crear canal con inteligencia artificial faceless", "categoria": "Growth IA"}
     ]
     
     now = datetime.now(timezone.utc)
     one_month_ago = (now - timedelta(days=30)).isoformat()
     
     results = []
-    for niche in niches:
+    for niche in niches_ia:
         try:
             res = youtube.search().list(
                 q=niche["query"],
@@ -267,11 +278,14 @@ def get_channel_complete_info(youtube, query):
     except Exception:
         return None, None
 
-def search_channels_by_keyword(youtube, query_keyword, lang_code="", max_results=12):
-    """Busca y extrae los mejores canales basados en una palabra clave e idioma."""
+def search_ai_channels_by_keyword(youtube, query_keyword, lang_code="", max_results=12):
+    """Filtra y busca específicamente canales enfocados en IA/Faceless."""
     try:
+        # Añadir contexto de IA a la búsqueda si no lo tiene implícito
+        full_query = f"{query_keyword} IA AI faceless"
+        
         search_kwargs = {
-            "q": query_keyword,
+            "q": full_query,
             "type": "channel",
             "order": "viewCount",
             "maxResults": max_results,
@@ -286,7 +300,6 @@ def search_channels_by_keyword(youtube, query_keyword, lang_code="", max_results
         if not channel_ids:
             return []
 
-        # Obtener estadísticas detalladas
         c_res = youtube.channels().list(
             part="snippet,statistics",
             id=",".join(channel_ids)
@@ -307,11 +320,10 @@ def search_channels_by_keyword(youtube, query_keyword, lang_code="", max_results
                 "custom_url": snip.get("customUrl", "")
             })
             
-        # Ordenar por vistas totales
         channels_data.sort(key=lambda x: x["vistas"], reverse=True)
         return channels_data
     except Exception as e:
-        st.error(f"Error al buscar canales: {e}")
+        st.error(f"Error al buscar canales de IA: {e}")
         return []
 
 # ==========================================
@@ -320,8 +332,8 @@ def search_channels_by_keyword(youtube, query_keyword, lang_code="", max_results
 with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 10px 0;">
-        <h2 style="color: #FF0000; margin:0; font-weight: 800;">⚡ ViewPulse</h2>
-        <p style="font-size: 0.8rem; color: #888;">YouTube Intelligence Platform</p>
+        <h2 style="color: #FF0000; margin:0; font-weight: 800;">🤖 ViewPulse AI</h2>
+        <p style="font-size: 0.8rem; color: #16C784; font-weight: 600;">Plataforma para Canales de IA</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -332,16 +344,16 @@ with st.sidebar:
     menu = st.radio(
         "Navegación:",
         [
-            "🔥 Top Nichos del Último Mes",
-            "🔗 Canales Relacionados por Nicho",
-            "🔍 Explorador de Nichos y Micronichos",
-            "📊 Auditoría Visual de Canal",
+            "🔥 Top Nichos de IA del Último Mes",
+            "🔗 Canales de IA Relacionados",
+            "🔍 Explorador por Nicho & Micronicho IA",
+            "📊 Auditoría Visual de Canal IA",
             "📘 ¿Cómo sacar tu API Key?"
         ]
     )
     
     st.markdown("---")
-    st.caption("🚀 powered by **YouTube Data API v3**")
+    st.caption("🤖 Enfocado 100% en **Canales Creados con IA**")
 
 # ==========================================
 # SECCIÓN: TUTORIAL API KEY
@@ -355,7 +367,7 @@ if menu == "📘 ¿Cómo sacar tu API Key?":
     </div>
     <div class="step-box">
         <h4>Paso 2: Crear un Proyecto Nuevo</h4>
-        <p>En la barra superior, haz clic en el selector de proyectos y crea uno llamado <code>Analizador-YouTube</code>.</p>
+        <p>En la barra superior, haz clic en el selector de proyectos y crea uno llamado <code>Analizador-YouTube-IA</code>.</p>
     </div>
     <div class="step-box">
         <h4>Paso 3: Activar la YouTube Data API v3</h4>
@@ -385,21 +397,21 @@ except Exception:
     st.stop()
 
 # ==========================================
-# SECCIÓN 1: TOP NICHOS DEL ÚLTIMO MES
+# SECCIÓN 1: TOP NICHOS DE IA
 # ==========================================
-if menu == "🔥 Top Nichos del Último Mes":
-    st.title("🔥 Nichos y Tendencias con Mayor Crecimiento (Últimos 30 Días)")
-    st.markdown("Análisis del mercado en YouTube para identificar temas de alta tracción y contenidos virales recientes.")
+if menu == "🔥 Top Nichos de IA del Último Mes":
+    st.title("🔥 Top Nichos y Contenidos de IA con Mayor Crecimiento (30 Días)")
+    st.markdown("Análisis automático enfocado en la galaxia de **canales creados con Inteligencia Artificial** (*Faceless*, Avatares, Historias, Lo-Fi, etc.).")
     
-    with st.spinner("🔍 Cargando tendencias globales del último mes..."):
-        top_data = fetch_top_niches_last_month(youtube)
+    with st.spinner("🔍 Cargando tendencias de contenido generado por IA..."):
+        top_data = fetch_top_ai_niches_last_month(youtube)
         
     for item in top_data:
         st.markdown(f"""
         <div class="saas-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin:0; color:#FFF;">📌 {item['nicho']}</h3>
-                <span class="badge-trend">{item['categoria']}</span>
+                <span class="badge-ai">{item['categoria']}</span>
             </div>
         """, unsafe_allow_html=True)
         
@@ -411,7 +423,7 @@ if menu == "🔥 Top Nichos del Último Mes":
                     <img src="{vid['thumb']}" class="video-thumb" />
                     <div style="padding: 12px;">
                         <p style="font-weight:700; font-size:0.85rem; margin-bottom:5px; height: 40px; overflow: hidden; color: #FFF;">{vid['titulo']}</p>
-                        <p style="font-size:0.75rem; color:#888; margin-bottom:8px;">📺 <strong>{vid['canal']}</strong></p>
+                        <p style="font-size:0.75rem; color:#888; margin-bottom:8px;">🤖 <strong>{vid['canal']}</strong></p>
                         <div style="display:flex; gap:8px;">
                             <span class="badge-metric">👁️ {format_num(vid['vistas'])}</span>
                             <span class="badge-metric">👍 {format_num(vid['likes'])}</span>
@@ -422,22 +434,21 @@ if menu == "🔥 Top Nichos del Último Mes":
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
-# SECCIÓN 2: CANALES RELACIONADOS POR NICHO (NUEVO)
+# SECCIÓN 2: CANALES DE IA RELACIONADOS
 # ==========================================
-elif menu == "🔗 Canales Relacionados por Nicho":
-    st.title("🔗 Buscador de Canales Relacionados por Nicho")
-    st.markdown("Ingresa un canal de referencia y descubre los **mejores canales competidores y afines** de su mismo ecosistema.")
+elif menu == "🔗 Canales de IA Relacionados":
+    st.title("🔗 Buscador de Canales Competidores en el Nicho de IA")
+    st.markdown("Ingresa un canal de referencia y descubre los **mejores canales creados con IA** dentro de su misma temática.")
     
     col_input, col_lang = st.columns([3, 1])
     with col_input:
-        target_channel = st.text_input("🎯 Canal de Referencia (Handle o Nombre):", "@MrBeast")
+        target_channel = st.text_input("🎯 Canal de Referencia IA (Handle o Nombre):", "@CreacionesIA")
     with col_lang:
         selected_lang_label = st.selectbox("🌐 Filtrar Idioma:", list(DICCIONARIO_IDIOMAS.keys()))
         selected_lang_code = DICCIONARIO_IDIOMAS[selected_lang_label]
         
-    if st.button("🚀 Buscar Canales Relacionados"):
-        with st.spinner(f"Analizando el nicho de {target_channel}..."):
-            # 1. Obtener información del canal base
+    if st.button("🚀 Buscar Canales de IA Competidores"):
+        with st.spinner(f"Analizando competidores de IA para {target_channel}..."):
             ch_item, _ = get_channel_complete_info(youtube, target_channel)
             if not ch_item:
                 st.error("No se pudo encontrar el canal de referencia.")
@@ -445,19 +456,16 @@ elif menu == "🔗 Canales Relacionados por Nicho":
                 base_title = ch_item["snippet"]["title"]
                 base_desc = ch_item["snippet"].get("description", "")
                 
-                # Extraer palabras clave del nombre/descripción para buscar el nicho
-                search_query = f"{base_title} {base_desc[:100]}"
-                related_channels = search_channels_by_keyword(youtube, search_query, lang_code=selected_lang_code, max_results=12)
+                search_query = f"{base_title} {base_desc[:80]}"
+                related_channels = search_ai_channels_by_keyword(youtube, search_query, lang_code=selected_lang_code, max_results=12)
                 
-                # Filtrar el propio canal de referencia de los resultados
                 related_channels = [c for c in related_channels if c["id"] != ch_item["id"]]
                 
-                st.markdown(f"### 🎯 Mejores Canales Relacionados con **{base_title}**")
+                st.markdown(f"### 🎯 Mejores Canales de IA Competidores de **{base_title}**")
                 
                 if not related_channels:
-                    st.warning("No se encontraron canales relacionados con los filtros seleccionados.")
+                    st.warning("No se encontraron canales de IA relacionados con esos filtros.")
                 else:
-                    # Renderizar en Grid de 3 columnas
                     for i in range(0, len(related_channels), 3):
                         cols = st.columns(3)
                         for j in range(3):
@@ -480,32 +488,31 @@ elif menu == "🔗 Canales Relacionados por Nicho":
                                     """, unsafe_allow_html=True)
 
 # ==========================================
-# SECCIÓN 3: EXPLORADOR DE NICHOS Y MICRONICHOS (NUEVO)
+# SECCIÓN 3: EXPLORADOR DE NICHOS Y MICRONICHOS IA
 # ==========================================
-elif menu == "🔍 Explorador de Nichos y Micronichos":
-    st.title("🔍 Explorador Inteligente de Canales por Nicho & Micronicho")
-    st.markdown("Selecciona una categoría, ajusta el micronicho e idioma para descubrir los **canales con mayor impacto**.")
+elif menu == "🔍 Explorador por Nicho & Micronicho IA":
+    st.title("🔍 Explorador de Canales por Nicho & Micronicho de IA")
+    st.markdown("Selecciona una categoría de creación con Inteligencia Artificial, ajusta el micronicho e idioma para descubrir los canales más exitosos.")
     
     col_n, col_mn, col_l = st.columns([2, 2, 1])
     
     with col_n:
-        sel_nicho = st.selectbox("📌 Selecciona el Nicho:", list(DICCIONARIO_NICHOS.keys()))
+        sel_nicho = st.selectbox("📌 Categoría de IA:", list(DICCIONARIO_NICHOS_IA.keys()))
     with col_mn:
-        sel_micronicho = st.selectbox("🎯 Selecciona el Micronicho:", DICCIONARIO_NICHOS[sel_nicho])
+        sel_micronicho = st.selectbox("🎯 Micronicho de IA:", DICCIONARIO_NICHOS_IA[sel_nicho])
     with col_l:
         sel_lang_lbl = st.selectbox("🌐 Idioma:", list(DICCIONARIO_IDIOMAS.keys()))
         sel_lang_code = DICCIONARIO_IDIOMAS[sel_lang_lbl]
         
-    if st.button("🔎 Explorar Mejores Canales"):
-        with st.spinner(f"Buscando los líderes de '{sel_micronicho}'..."):
-            channels = search_channels_by_keyword(youtube, sel_micronicho, lang_code=sel_lang_code, max_results=12)
+    if st.button("🔎 Explorar Canales de IA"):
+        with st.spinner(f"Buscando los canales más vistos en '{sel_micronicho}'..."):
+            channels = search_ai_channels_by_keyword(youtube, sel_micronicho, lang_code=sel_lang_code, max_results=12)
             
             if not channels:
-                st.warning("No se encontraron canales para esta combinación de filtros.")
+                st.warning("No se encontraron canales de IA para esta combinación de filtros.")
             else:
-                st.markdown(f"### 🏆 Top Canales Líderes en **{sel_micronicho}**")
+                st.markdown(f"### 🤖 Top Canales de IA en **{sel_micronicho}**")
                 
-                # Renderizar en Grid de 3 columnas
                 for i in range(0, len(channels), 3):
                     cols = st.columns(3)
                     for j in range(3):
@@ -528,12 +535,12 @@ elif menu == "🔍 Explorador de Nichos y Micronichos":
                                 """, unsafe_allow_html=True)
 
 # ==========================================
-# SECCIÓN 4: AUDITORÍA VISUAL DE CANAL
+# SECCIÓN 4: AUDITORÍA VISUAL DE CANAL IA
 # ==========================================
-elif menu == "📊 Auditoría Visual de Canal":
-    st.title("📊 Auditoría Estratégica de Canal")
+elif menu == "📊 Auditoría Visual de Canal IA":
+    st.title("📊 Auditoría Visual de Canal Creado con IA")
     
-    channel_query = st.text_input("🔍 Ingresa el Handle o Nombre del Canal a auditar:", "@MrBeast")
+    channel_query = st.text_input("🔍 Ingresa el Handle o Nombre del Canal IA a auditar:", "@AIHistorias")
     
     if st.button("🚀 Iniciar Análisis Visual"):
         with st.spinner("Cargando perfil, miniaturas y métricas del canal..."):
@@ -557,7 +564,7 @@ elif menu == "📊 Auditoría Visual de Canal":
                     <div class="channel-header">
                         <img src="{logo_url}" class="channel-avatar-sm" />
                         <div>
-                            <h2 style="margin:0; color:#FFF;">{title}</h2>
+                            <h2 style="margin:0; color:#FFF;">{title} <span class="badge-ai">IA Channel</span></h2>
                             <p style="margin:0; color:#888; font-size:0.85rem;">ID: {ch_data['id']} | País: {snippet.get('country', 'N/A')}</p>
                         </div>
                     </div>
@@ -572,7 +579,7 @@ elif menu == "📊 Auditoría Visual de Canal":
                 m4.metric("📈 Promedio Vistas/Vídeo", format_num(int(views / max(videos_count, 1))))
                 
                 st.markdown("---")
-                st.subheader("🖼️ Catálogo Reciente: Miniaturas y Desempeño")
+                st.subheader("🖼️ Catálogo Reciente: Miniaturas y Rendimiento")
                 
                 if v_details:
                     for i in range(0, len(v_details), 3):
